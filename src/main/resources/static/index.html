@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='14' font-size='14'>📇</text></svg>">
     <title>个人通讯录</title>
     <link rel="stylesheet" href="https://registry.npmmirror.com/bootstrap/5.3.3/files/dist/css/bootstrap.min.css">
     <style>
@@ -16,8 +17,10 @@
         }
         .modal-mask {
             position: fixed; inset: 0; background: rgba(0,0,0,.45);
-            display: flex; align-items: center; justify-content: center; z-index: 1050;
+            display: flex; align-items: flex-start; justify-content: center; z-index: 1050;
+            overflow-y: auto; padding: 2rem 1rem;
         }
+        .modal-dialog { width: 480px; max-width: 92vw; margin: auto; }
         .table td { vertical-align: middle; }
     </style>
 </head>
@@ -83,7 +86,7 @@
 
     <!-- 新增/编辑弹窗 -->
     <div v-if="showModal" class="modal-mask" @click.self="closeModal">
-        <div class="card" style="width: 480px; max-width: 92vw;">
+        <div class="card modal-dialog">
             <div class="card-header bg-white py-3">
                 <h5 class="mb-0">{{ form.id ? '编辑联系人' : '新增联系人' }}</h5>
             </div>

@@ -47,7 +47,7 @@ const colorOf = (name) => {
     return COLORS[sum % COLORS.length];
 };
 
-const emptyForm = { id: null, name: '', phone: '', email: '', address: '', notes: '' };
+const emptyForm = { id: null, name: '', age: '', phone: '', email: '', address: '', notes: '' };
 
 function App() {
     const [contacts, setContacts] = useState([]);
@@ -93,7 +93,12 @@ function App() {
     const closeModal = () => setShowModal(false);
 
     const handleInput = (field, value) => {
-        setForm(prev => ({ ...prev, [field]: value.trim() }));
+        if (field === 'age') {
+            const v = String(value).trim();
+            setForm(prev => ({ ...prev, [field]: v === '' ? '' : Number(v) }));
+        } else {
+            setForm(prev => ({ ...prev, [field]: value.trim() }));
+        }
     };
 
     const save = async () => {
@@ -142,7 +147,7 @@ function App() {
                             onChange={debounceSearch}
                             type="search"
                             className="form-control form-control-lg"
-                            placeholder="按姓名、电话或邮箱搜索…"
+                            placeholder="按名字、年龄、电话或邮箱搜索…"
                         />
                     </div>
                     <div className="col-md-4 text-md-end">
@@ -157,7 +162,8 @@ function App() {
                             <thead className="table-light">
                                 <tr>
                                     <th style={{ width: 60 }}></th>
-                                    <th>姓名</th>
+                                    <th>名字</th>
+                                    <th style={{ width: 70 }}>年龄</th>
                                     <th>电话</th>
                                     <th>邮箱</th>
                                     <th>地址</th>
@@ -169,6 +175,7 @@ function App() {
                                     <tr key={c.id}>
                                         <td><span className="avatar" style={{ background: colorOf(c.name) }}>{c.name.charAt(0).toUpperCase()}</span></td>
                                         <td className="fw-semibold">{c.name}</td>
+                                        <td>{c.age != null && c.age !== '' ? c.age : <span className="text-muted">—</span>}</td>
                                         <td><a href={`tel:${c.phone}`}>{c.phone}</a></td>
                                         <td>{c.email ? <a href={`mailto:${c.email}`}>{c.email}</a> : <span className="text-muted">—</span>}</td>
                                         <td>{c.address || '—'}</td>
@@ -180,7 +187,7 @@ function App() {
                                 ))}
                                 {contacts.length === 0 && (
                                     <tr>
-                                        <td colSpan="6" className="text-center text-muted py-5">
+                                        <td colSpan="7" className="text-center text-muted py-5">
                                             {keyword ? '没有找到匹配的联系人' : '通讯录是空的，点击右上角新增联系人吧'}
                                         </td>
                                     </tr>
@@ -201,12 +208,24 @@ function App() {
                         </div>
                         <div className="card-body">
                             <div className="mb-3">
-                                <label className="form-label">姓名 <span className="text-danger">*</span></label>
+                                <label className="form-label">名字 <span className="text-danger">*</span></label>
                                 <input
                                     value={form.name}
                                     onChange={(e) => handleInput('name', e.target.value)}
                                     className="form-control"
                                     placeholder="张三"
+                                />
+                            </div>
+                            <div className="mb-3">
+                                <label className="form-label">年龄</label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    max="150"
+                                    value={form.age}
+                                    onChange={(e) => handleInput('age', e.target.value)}
+                                    className="form-control"
+                                    placeholder="例如 25"
                                 />
                             </div>
                             <div className="mb-3">

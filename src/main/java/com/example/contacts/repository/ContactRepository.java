@@ -14,6 +14,7 @@ public interface ContactRepository extends JpaRepository<Contact, Long> {
             WHERE LOWER(c.name)  LIKE LOWER(CONCAT('%', :keyword, '%'))
                OR c.phone        LIKE CONCAT('%', :keyword, '%')
                OR LOWER(c.email) LIKE LOWER(CONCAT('%', :keyword, '%'))
+               OR CAST(c.age AS string) LIKE CONCAT('%', :keyword, '%')
             """)
     List<Contact> search(@Param("keyword") String keyword);
 }

@@ -1,7 +1,28 @@
+# === Maven 构建产物 ===
 target/
-data/
-*.log
+*.jar
+*.war
+*.ear
+*.class
+
+# === IDE 配置 ===
 .idea/
-*.iml
 .vscode/
+*.iml
+*.iws
+*.ipr
+.project
+.classpath
+.settings/
+
+# === 日志 ===
+*.log
+logs/
+
+# === 操作系统 ===
 .DS_Store
+Thumbs.db
+
+# === 临时文件 ===
+*.tmp
+*.swp

@@ -2,6 +2,8 @@ package com.example.contacts.model;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -16,9 +18,13 @@ public class Contact {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank(message = "姓名不能为空")
+    @NotBlank(message = "名字不能为空")
     @Column(nullable = false, length = 50)
     private String name;
+
+    @Min(value = 0, message = "年龄不能小于0")
+    @Max(value = 101, message = "年龄不能超过101")
+    private Integer age;
 
     @NotBlank(message = "电话不能为空")
     @Column(nullable = false, length = 30)
@@ -58,6 +64,14 @@ public class Contact {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public Integer getAge() {
+        return age;
+    }
+
+    public void setAge(Integer age) {
+        this.age = age;
     }
 
     public String getPhone() {

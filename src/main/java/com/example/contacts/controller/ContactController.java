@@ -51,6 +51,7 @@ public class ContactController {
         return repository.findById(id)
                 .map(existing -> {
                     existing.setName(contact.getName());
+                    existing.setAge(contact.getAge());
                     existing.setPhone(contact.getPhone());
                     existing.setEmail(contact.getEmail());
                     existing.setAddress(contact.getAddress());

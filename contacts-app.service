@@ -1,0 +1,16 @@
+[Unit]
+Description=Contacts App - Spring Boot Contacts Application
+After=network.target mariadb.service
+Requires=mariadb.service
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/contacts-app
+ExecStart=/usr/bin/java -jar contacts-app-1.0.0.jar --spring.datasource.url='jdbc:mariadb://localhost:3306/contactdb?useSSL=false' --server.port=8080
+Restart=on-failure
+RestartSec=5
+StandardOutput=append:/opt/contacts-app/app.log
+StandardError=append:/opt/contacts-app/app.log
+
+[Install]
+WantedBy=multi-user.target

@@ -31,194 +31,238 @@
     </style>
 </head>
 <body>
-<div id="app">
-    <!-- 顶部导航 -->
-    <nav class="navbar navbar-dark bg-primary mb-4">
-        <div class="container">
-            <span class="navbar-brand">📇 个人通讯录</span>
-            <span class="navbar-text text-white">共 {{ contacts.length }} 位联系人</span>
-        </div>
-    </nav>
+<div id="root"></div>
 
-    <div class="container">
-        <!-- 搜索与新增 -->
-        <div class="row g-2 mb-3">
-            <div class="col-md-8">
-                <input v-model.trim="keyword" @input="debounceSearch" type="search"
-                       class="form-control form-control-lg" placeholder="按姓名、电话或邮箱搜索…">
-            </div>
-            <div class="col-md-4 text-md-end">
-                <button class="btn btn-primary btn-lg" @click="openCreate">+ 新增联系人</button>
-            </div>
-        </div>
+<script src="react.development.js"></script>
+<script src="react-dom.development.js"></script>
+<script src="babel.min.js"></script>
+<script type="text/babel">
 
-        <!-- 联系人列表 -->
-        <div class="card">
-            <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th style="width:60px"></th>
-                            <th>姓名</th>
-                            <th>电话</th>
-                            <th>邮箱</th>
-                            <th>地址</th>
-                            <th style="width:150px">操作</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="c in contacts" :key="c.id">
-                            <td><span class="avatar" :style="{ background: colorOf(c.name) }">{{ c.name.charAt(0).toUpperCase() }}</span></td>
-                            <td class="fw-semibold">{{ c.name }}</td>
-                            <td><a :href="'tel:' + c.phone">{{ c.phone }}</a></td>
-                            <td><a v-if="c.email" :href="'mailto:' + c.email">{{ c.email }}</a><span v-else class="text-muted">—</span></td>
-                            <td>{{ c.address || '—' }}</td>
-                            <td>
-                                <button class="btn btn-sm btn-outline-secondary me-1" @click="openEdit(c)">编辑</button>
-                                <button class="btn btn-sm btn-outline-danger" @click="remove(c)">删除</button>
-                            </td>
-                        </tr>
-                        <tr v-if="!loading && contacts.length === 0">
-                            <td colspan="6" class="text-center text-muted py-5">
-                                {{ keyword ? '没有找到匹配的联系人' : '通讯录是空的，点击右上角新增联系人吧' }}
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        <p class="text-center text-muted small my-4">数据保存在本地 H2 数据库中（data/contactsdb）</p>
-    </div>
+const { useState, useEffect, useRef, useCallback } = React;
 
-    <!-- 新增/编辑弹窗 -->
-    <div v-if="showModal" class="contact-mask" @click.self="closeModal">
-        <div class="card contact-dialog">
-            <div class="card-header bg-white py-3">
-                <h5 class="mb-0">{{ form.id ? '编辑联系人' : '新增联系人' }}</h5>
-            </div>
-            <div class="card-body">
-                <div class="mb-3">
-                    <label class="form-label">姓名 <span class="text-danger">*</span></label>
-                    <input v-model.trim="form.name" class="form-control" placeholder="张三">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">电话 <span class="text-danger">*</span></label>
-                    <input v-model.trim="form.phone" class="form-control" placeholder="13800138000">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">邮箱</label>
-                    <input v-model.trim="form.email" class="form-control" placeholder="zhangsan@example.com">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">地址</label>
-                    <input v-model.trim="form.address" class="form-control" placeholder="上海市浦东新区">
-                </div>
-                <div class="mb-1">
-                    <label class="form-label">备注</label>
-                    <textarea v-model.trim="form.notes" class="form-control" rows="2"></textarea>
-                </div>
-                <div v-if="errorMsg" class="alert alert-danger py-2 mt-3 mb-0">{{ errorMsg }}</div>
-            </div>
-            <div class="card-footer bg-white py-3 text-end">
-                <button class="btn btn-secondary me-2" @click="closeModal">取消</button>
-                <button class="btn btn-primary" :disabled="saving" @click="save">
-                    {{ saving ? '保存中…' : '保存' }}
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
+const COLORS = ['#e74c3c', '#8e44ad', '#3498db', '#16a085', '#f39c12', '#2c3e50', '#d35400'];
+const colorOf = (name) => {
+    let sum = 0;
+    for (const ch of name) sum += ch.codePointAt(0);
+    return COLORS[sum % COLORS.length];
+};
 
-<script src="vue.global.prod.js"></script>
-<script>
-const { createApp, ref } = Vue;
+const emptyForm = { id: null, name: '', phone: '', email: '', address: '', notes: '' };
 
-createApp({
-    setup() {
-        const contacts = ref([]);
-        const keyword = ref('');
-        const loading = ref(false);
-        const showModal = ref(false);
-        const saving = ref(false);
-        const errorMsg = ref('');
-        const form = ref({ id: null, name: '', phone: '', email: '', address: '', notes: '' });
-        const colors = ['#e74c3c', '#8e44ad', '#3498db', '#16a085', '#f39c12', '#2c3e50', '#d35400'];
+function App() {
+    const [contacts, setContacts] = useState([]);
+    const [keyword, setKeyword] = useState('');
+    const [showModal, setShowModal] = useState(false);
+    const [saving, setSaving] = useState(false);
+    const [errorMsg, setErrorMsg] = useState('');
+    const [form, setForm] = useState(emptyForm);
+    const timerRef = useRef(null);
 
-        async function load() {
-            loading.value = true;
-            try {
-                const q = keyword.value ? '?keyword=' + encodeURIComponent(keyword.value) : '';
-                const res = await fetch('/api/contacts' + q);
-                contacts.value = await res.json();
-            } finally {
-                loading.value = false;
-            }
-        }
+    const load = useCallback(async () => {
+        const q = keyword ? '?keyword=' + encodeURIComponent(keyword) : '';
+        const res = await fetch('/api/contacts' + q);
+        setContacts(await res.json());
+    }, [keyword]);
 
-        let timer = null;
-        function debounceSearch() {
-            clearTimeout(timer);
-            timer = setTimeout(load, 300);
-        }
-
-        function openCreate() {
-            form.value = { id: null, name: '', phone: '', email: '', address: '', notes: '' };
-            errorMsg.value = '';
-            showModal.value = true;
-        }
-
-        function openEdit(c) {
-            form.value = { ...c };
-            errorMsg.value = '';
-            showModal.value = true;
-        }
-
-        function closeModal() {
-            showModal.value = false;
-        }
-
-        async function save() {
-            saving.value = true;
-            errorMsg.value = '';
-            try {
-                const f = form.value;
-                const res = await fetch(f.id ? `/api/contacts/${f.id}` : '/api/contacts', {
-                    method: f.id ? 'PUT' : 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(f),
-                });
-                if (!res.ok) {
-                    const err = await res.json().catch(() => ({}));
-                    errorMsg.value = err.message || '保存失败，请检查填写内容';
-                    return;
-                }
-                showModal.value = false;
-                await load();
-            } finally {
-                saving.value = false;
-            }
-        }
-
-        async function remove(c) {
-            if (!confirm(`确定删除联系人「${c.name}」吗？`)) return;
-            await fetch(`/api/contacts/${c.id}`, { method: 'DELETE' });
-            await load();
-        }
-
-        function colorOf(name) {
-            let sum = 0;
-            for (const ch of name) sum += ch.codePointAt(0);
-            return colors[sum % colors.length];
-        }
-
+    useEffect(() => {
         load();
+    }, []);
 
-        return {
-            contacts, keyword, loading, showModal, saving, errorMsg, form,
-            debounceSearch, openCreate, openEdit, closeModal, save, remove, colorOf,
-        };
-    },
-}).mount('#app');
+    const debounceSearch = (e) => {
+        const val = e.target.value.trim();
+        setKeyword(val);
+        clearTimeout(timerRef.current);
+        timerRef.current = setTimeout(() => {
+            const q = val ? '?keyword=' + encodeURIComponent(val) : '';
+            fetch('/api/contacts' + q).then(r => r.json()).then(setContacts);
+        }, 300);
+    };
+
+    const openCreate = () => {
+        setForm(emptyForm);
+        setErrorMsg('');
+        setShowModal(true);
+    };
+
+    const openEdit = (c) => {
+        setForm({ ...c });
+        setErrorMsg('');
+        setShowModal(true);
+    };
+
+    const closeModal = () => setShowModal(false);
+
+    const handleInput = (field, value) => {
+        setForm(prev => ({ ...prev, [field]: value.trim() }));
+    };
+
+    const save = async () => {
+        setSaving(true);
+        setErrorMsg('');
+        try {
+            const f = form;
+            const res = await fetch(f.id ? `/api/contacts/${f.id}` : '/api/contacts', {
+                method: f.id ? 'PUT' : 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(f),
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                setErrorMsg(err.message || '保存失败，请检查填写内容');
+                return;
+            }
+            setShowModal(false);
+            await load();
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const remove = (c) => {
+        if (!confirm(`确定删除联系人「${c.name}」吗？`)) return;
+        fetch(`/api/contacts/${c.id}`, { method: 'DELETE' }).then(load);
+    };
+
+    return (
+        <>
+            {/* 顶部导航 */}
+            <nav className="navbar navbar-dark bg-primary mb-4">
+                <div className="container">
+                    <span className="navbar-brand">📇 个人通讯录</span>
+                    <span className="navbar-text text-white">共 {contacts.length} 位联系人</span>
+                </div>
+            </nav>
+
+            <div className="container">
+                {/* 搜索与新增 */}
+                <div className="row g-2 mb-3">
+                    <div className="col-md-8">
+                        <input
+                            defaultValue={keyword}
+                            onChange={debounceSearch}
+                            type="search"
+                            className="form-control form-control-lg"
+                            placeholder="按姓名、电话或邮箱搜索…"
+                        />
+                    </div>
+                    <div className="col-md-4 text-md-end">
+                        <button className="btn btn-primary btn-lg" onClick={openCreate}>+ 新增联系人</button>
+                    </div>
+                </div>
+
+                {/* 联系人列表 */}
+                <div className="card">
+                    <div className="table-responsive">
+                        <table className="table table-hover mb-0">
+                            <thead className="table-light">
+                                <tr>
+                                    <th style={{ width: 60 }}></th>
+                                    <th>姓名</th>
+                                    <th>电话</th>
+                                    <th>邮箱</th>
+                                    <th>地址</th>
+                                    <th style={{ width: 150 }}>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {contacts.map(c => (
+                                    <tr key={c.id}>
+                                        <td><span className="avatar" style={{ background: colorOf(c.name) }}>{c.name.charAt(0).toUpperCase()}</span></td>
+                                        <td className="fw-semibold">{c.name}</td>
+                                        <td><a href={`tel:${c.phone}`}>{c.phone}</a></td>
+                                        <td>{c.email ? <a href={`mailto:${c.email}`}>{c.email}</a> : <span className="text-muted">—</span>}</td>
+                                        <td>{c.address || '—'}</td>
+                                        <td>
+                                            <button className="btn btn-sm btn-outline-secondary me-1" onClick={() => openEdit(c)}>编辑</button>
+                                            <button className="btn btn-sm btn-outline-danger" onClick={() => remove(c)}>删除</button>
+                                        </td>
+                                    </tr>
+                                ))}
+                                {contacts.length === 0 && (
+                                    <tr>
+                                        <td colSpan="6" className="text-center text-muted py-5">
+                                            {keyword ? '没有找到匹配的联系人' : '通讯录是空的，点击右上角新增联系人吧'}
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <p className="text-center text-muted small my-4">数据保存在本地 H2 数据库中（data/contactsdb）</p>
+            </div>
+
+            {/* 新增/编辑弹窗 */}
+            {showModal && (
+                <div className="contact-mask" onClick={(e) => { if (e.target === e.currentTarget) closeModal(); }}>
+                    <div className="card contact-dialog">
+                        <div className="card-header bg-white py-3">
+                            <h5 className="mb-0">{form.id ? '编辑联系人' : '新增联系人'}</h5>
+                        </div>
+                        <div className="card-body">
+                            <div className="mb-3">
+                                <label className="form-label">姓名 <span className="text-danger">*</span></label>
+                                <input
+                                    value={form.name}
+                                    onChange={(e) => handleInput('name', e.target.value)}
+                                    className="form-control"
+                                    placeholder="张三"
+                                />
+                            </div>
+                            <div className="mb-3">
+                                <label className="form-label">电话 <span className="text-danger">*</span></label>
+                                <input
+                                    value={form.phone}
+                                    onChange={(e) => handleInput('phone', e.target.value)}
+                                    className="form-control"
+                                    placeholder="13800138000"
+                                />
+                            </div>
+                            <div className="mb-3">
+                                <label className="form-label">邮箱</label>
+                                <input
+                                    value={form.email}
+                                    onChange={(e) => handleInput('email', e.target.value)}
+                                    className="form-control"
+                                    placeholder="zhangsan@example.com"
+                                />
+                            </div>
+                            <div className="mb-3">
+                                <label className="form-label">地址</label>
+                                <input
+                                    value={form.address}
+                                    onChange={(e) => handleInput('address', e.target.value)}
+                                    className="form-control"
+                                    placeholder="上海市浦东新区"
+                                />
+                            </div>
+                            <div className="mb-1">
+                                <label className="form-label">备注</label>
+                                <textarea
+                                    value={form.notes}
+                                    onChange={(e) => handleInput('notes', e.target.value)}
+                                    className="form-control"
+                                    rows="2"
+                                />
+                            </div>
+                            {errorMsg && <div className="alert alert-danger py-2 mt-3 mb-0">{errorMsg}</div>}
+                        </div>
+                        <div className="card-footer bg-white py-3 text-end">
+                            <button className="btn btn-secondary me-2" onClick={closeModal}>取消</button>
+                            <button className="btn btn-primary" disabled={saving} onClick={save}>
+                                {saving ? '保存中…' : '保存'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </>
+    );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
+
 </script>
 </body>
 </html>

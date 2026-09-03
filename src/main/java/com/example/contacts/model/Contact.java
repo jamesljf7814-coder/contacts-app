@@ -23,7 +23,7 @@ public class Contact {
     private String name;
 
     @Min(value = 0, message = "年龄不能小于0")
-    @Max(value = 101, message = "年龄不能超过101")
+    @Max(value = 102, message = "年龄不能超过102")
     private Integer age;
 
     @NotBlank(message = "电话不能为空")

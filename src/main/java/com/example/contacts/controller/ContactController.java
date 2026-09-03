@@ -70,13 +70,13 @@ public class ContactController {
         return ResponseEntity.noContent().build();
     }
 
-    /** 参数校验失败时返回统一错误信息 */
+    /** 参数校验失败时返回 400 + 错误信息 */
     @ExceptionHandler(org.springframework.web.bind.MethodArgumentNotValidException.class)
-    public Map<String, String> handleValidation(org.springframework.web.bind.MethodArgumentNotValidException e) {
+    public ResponseEntity<Map<String, String>> handleValidation(org.springframework.web.bind.MethodArgumentNotValidException e) {
         String msg = e.getBindingResult().getFieldErrors().stream()
                 .map(err -> err.getDefaultMessage())
                 .findFirst()
                 .orElse("参数不合法");
-        return Map.of("message", msg);
+        return ResponseEntity.badRequest().body(Map.of("message", msg));
     }
 }
